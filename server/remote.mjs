@@ -1,3 +1,4 @@
+import { validPhoto, catalogPhoto, catalogColumns } from './photos.mjs';
 // Turso HTTP pipeline API. Each checkout uses one SQLite transaction on the remote server.
 import { AppError, integer, text } from './database.mjs';
 const arg = v => typeof v === 'number' ? {type:'integer',value:String(v)} : {type:'text',value:String(v)};
@@ -19,9 +20,10 @@ export function openRemoteStore() {
     });
   }
   const query=async(sql,args=[]) => (await execute([[sql,args]]))[0];
-  const products=async()=> (await query('SELECT * FROM products ORDER BY id')).rows;
+  const products=async()=> (await query('SELECT '+catalogColumns+' FROM products ORDER BY id')).rows;
   return {
     products,
+    async photo(id){return (await query('SELECT imageUrl FROM products WHERE id=?',[id])).rows[0]?.imageUrl;},
     async orders(){
       const rows=(await query('SELECT o.id,o.customerName,o.createdAt,i.productId,i.name,i.quantity,i.isBackorder FROM orders o JOIN order_items i ON i.orderId=o.id ORDER BY o.id DESC')).rows;
       const orders=new Map();
@@ -32,9 +34,9 @@ export function openRemoteStore() {
       return [...orders.values()];
     },
     async addProduct(draft){
-      const name=text(draft.name,'Name'),description=text(draft.description??'','Description',2000,true),category=text(draft.category||'Other','Category',80),unit=text(draft.unit||'item','Unit',80),imageUrl=text(draft.imageUrl??'','Image URL',2000,true),stock=integer(draft.stock,'Stock');
-      if(imageUrl){try{if(new URL(imageUrl).protocol!=='https:')throw Error();}catch{throw new AppError(400,'Use an HTTPS image URL.');}}
-      return (await query('INSERT INTO products(name,description,stock,category,imageUrl,unit) VALUES(?,?,?,?,?,?) RETURNING *',[name,description,stock,category,imageUrl,unit])).rows[0];
+      const name=text(draft.name,'Name'),description=text(draft.description??'','Description',2000,true),category=text(draft.category||'Other','Category',80),unit=text(draft.unit||'item','Unit',80),imageUrl=text(draft.imageUrl??'','Image',96000,true),stock=integer(draft.stock,'Stock');
+      if(imageUrl&&!validPhoto(imageUrl)){try{if(new URL(imageUrl).protocol!=='https:')throw Error();}catch{throw new AppError(400,'Use an HTTPS image URL.');}}
+      return catalogPhoto((await query('INSERT INTO products(name,description,stock,category,imageUrl,unit) VALUES(?,?,?,?,?,?) RETURNING *',[name,description,stock,category,imageUrl,unit])).rows[0]);
     },
     async updateStock(id,input){
       integer(id,'Product ID',1);

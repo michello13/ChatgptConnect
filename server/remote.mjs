@@ -38,6 +38,14 @@ export function openRemoteStore() {
       if(imageUrl&&!validPhoto(imageUrl)){try{if(new URL(imageUrl).protocol!=='https:')throw Error();}catch{throw new AppError(400,'Use an HTTPS image URL.');}}
       return catalogPhoto((await query('INSERT INTO products(name,description,stock,category,imageUrl,unit) VALUES(?,?,?,?,?,?) RETURNING *',[name,description,stock,category,imageUrl,unit])).rows[0]);
     },
+    async updatePhoto(id,input){
+      integer(id,'Product ID',1);
+      const photo=input.imageUrl;
+      if(photo!==''&&!validPhoto(photo))throw new AppError(400,'Choose a valid JPEG photo.');
+      const result=await query('UPDATE products SET imageUrl=? WHERE id=?',[photo,id]);
+      if(!result.changes)throw new AppError(404,'Product not found.');
+      return products();
+    },
     async updateStock(id,input){
       integer(id,'Product ID',1);
       const result=input.delta!==undefined?await query('UPDATE products SET stock=stock+? WHERE id=? AND stock+? BETWEEN 0 AND 1000000',[integer(input.delta,'Stock adjustment',-1000000),id,input.delta]):await query('UPDATE products SET stock=? WHERE id=?',[integer(input.stock,'Stock'),id]);

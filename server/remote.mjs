@@ -2,7 +2,7 @@
 import { AppError, integer, text } from './database.mjs';
 const arg = v => typeof v === 'number' ? {type:'integer',value:String(v)} : {type:'text',value:String(v)};
 export function openRemoteStore() {
-  const url = process.env.TURSO_DATABASE_URL?.replace(/^libsql:/,'https:');
+  const url = process.env.TURSO_DATABASE_URL?.replace(/^(libsql|turso):/,'https:');
   const token = process.env.TURSO_AUTH_TOKEN;
   if (!url || !url.startsWith('https://') || !token) throw new Error('Remote database configuration missing');
   async function execute(statements) {

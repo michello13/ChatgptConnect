@@ -12,7 +12,10 @@ export function CheckIn({ onCheckIn, onAdmin }: Props) {
   return (
     <div className="welcome-page">
       <main className="welcome-content">
-        <Brand large />
+        <section className="welcome-brand"><Brand large /><p className="welcome-tagline">A little trust goes a long way.</p></section>
+        <section className="welcome-checkin">
+        <h2>Welcome to the box</h2>
+        <p>Enter your first name to get started. No account needed.</p>
         <div className="botanical-divider">
           <Leaf aria-hidden="true" />
         </div>
@@ -31,13 +34,13 @@ export function CheckIn({ onCheckIn, onAdmin }: Props) {
             maxLength={100}
             autoComplete="given-name"
             required
-            autoFocus
           />
           <button className="primary full-width" disabled={!name.trim()}>
             Browse Products <ChevronRight />
           </button>
         </form>
-        <p className="footnote">Scan the QR code on the honesty box to open this page</p>
+        <p className="footnote">Take what you need. Confirm what you take.</p>
+        </section>
       </main>
       <footer className="welcome-footer">
         <button className="text-button" onClick={onAdmin}>

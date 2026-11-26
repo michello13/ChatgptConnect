@@ -1,4 +1,4 @@
-# The Honesty Box
+# HonestyBox
 
 A small React and SQLite application based on the original Figma Make export.
 Customers check in with a name, browse goods, fill a basket and confirm what they
@@ -7,7 +7,7 @@ products, change stock and view orders. There are no prices or online payments.
 
 ## Run on your computer
 
-Install **Node.js 24 LTS** (includes npm) and Git. Open a terminal in this folder:
+Install **Node.js 22 (22.17 or newer)** (includes npm) and Git. Open a terminal in this folder:
 
 ```sh
 npm ci
@@ -25,7 +25,7 @@ The application binds to your computer's loopback interface by default.
 
 1. In VS Code, open the Accounts menu and **Sign in with GitHub**.
 2. Run **Git: Clone** from the Command Palette and enter
-   `https://github.com/michello13/ChatgptConnect.git`.
+   `https://github.com/michello13/HonestyBox.git`.
 3. Open the repository folder. The new application files must be present in that
    checkout; unpublished workspace changes are not downloaded by cloning.
 4. Open **Terminal → New Terminal**, run `npm ci`, then `npm run dev`.
@@ -48,7 +48,7 @@ npm start
 ```
 
 The Node server serves the compiled site and API at `http://localhost:3000`.
-No separate SQLite installation is needed: the server uses Node 24's built-in
+No separate SQLite installation is needed: the server uses Node 22's built-in
 `node:sqlite` module. Both Windows and macOS/Linux use the same npm commands.
 
 ## Where to change things
@@ -143,3 +143,7 @@ Export SHA-256:
 ```text
 c4d423ad6101ed21d2007f14fd3e1e1c07452d7676368c61d44813209d41b9d2
 ```
+
+## Vercel migration (draft)
+
+Import this repository as `honestybox`, select Vite and Node 22.x. Create separate Turso databases for preview and production and apply `server/schema.sql` to each using the Turso SQL shell before deployment. Configure `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` and a strong `ADMIN_PIN` (minimum 16 characters) in Vercel environment settings. Do not commit credentials. Remote databases start empty; create products in the admin panel. Local SQLite data is not automatically transferred. Test API routing, checkout concurrency, session persistence, stock updates and login throttling on a protected preview before publishing. The remote adapter and routing are not yet integration-tested. Public checkout remains intentionally unauthenticated; restrict preview access and decide customer access policy before public launch.

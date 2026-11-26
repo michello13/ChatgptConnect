@@ -666,3 +666,9 @@ small.backorder-note {
       opacity 0.15s;
   }
 }
+
+.photo-picker { display: grid; gap: .75rem; margin-bottom: 1rem; }
+.photo-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.photo-actions button { display: inline-flex; align-items: center; gap: .5rem; }
+.photo-actions svg { width: 1.15rem; height: 1.15rem; }
+.photo-preview { width: min(100%, 240px); max-height: 220px; object-fit: contain; border-radius: .75rem; }

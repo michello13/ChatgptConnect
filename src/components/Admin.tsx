@@ -3,6 +3,7 @@ import { ArrowLeft, Lock, Plus, Settings } from 'lucide-react';
 import { shopApi } from '../api';
 import type { Order, Product, ProductDraft } from '../types';
 import { ProductForm } from './ProductForm';
+import { PhotoEditor } from './PhotoEditor';
 import { ProductImage } from './ProductImage';
 import { StockEditor } from './StockEditor';
 
@@ -18,6 +19,8 @@ export function Admin({ products, onProductsChange, onExit }: Props) {
   const [tab, setTab] = useState<'inventory' | 'orders'>('inventory');
   const [orders, setOrders] = useState<Order[]>([]);
   const [addingProduct, setAddingProduct] = useState(false);
+  const [editingPhoto, setEditingPhoto] = useState<Product | null>(null);
+  const [photoVersions, setPhotoVersions] = useState<Record<number, number>>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -147,7 +150,17 @@ export function Admin({ products, onProductsChange, onExit }: Props) {
           </nav>
           {tab === 'inventory' ? (
             <>
-              {addingProduct ? (
+              {editingPhoto ? (
+                <PhotoEditor key={editingPhoto.id} product={editingPhoto} busy={busy}
+                  onCancel={() => setEditingPhoto(null)}
+                  onSave={(imageUrl) => perform(async () => {
+                    const updated = await shopApi.setPhoto(editingPhoto.id, imageUrl);
+                    setPhotoVersions(current => ({ ...current, [editingPhoto.id]: Date.now() }));
+                    onProductsChange(updated);
+                    setEditingPhoto(null);
+                  })}
+                />
+              ) : addingProduct ? (
                 <ProductForm
                   busy={busy}
                   onSave={addProduct}
@@ -162,13 +175,14 @@ export function Admin({ products, onProductsChange, onExit }: Props) {
                 {products.map((product) => (
                   <article className="panel inventory-row" key={product.id}>
                     <div className="basket-photo">
-                      <ProductImage product={product} />
+                      <ProductImage key={photoVersions[product.id] ?? 0} product={product} />
                     </div>
                     <div className="inventory-description">
                       <h2>{product.name}</h2>
                       <p>
                         {product.unit} · {product.stock} in stock
                       </p>
+                      <button type="button" className="text-button" disabled={busy || addingProduct || editingPhoto !== null} onClick={() => setEditingPhoto(product)}>Change photo</button>
                     </div>
                     <StockEditor
                       product={product}

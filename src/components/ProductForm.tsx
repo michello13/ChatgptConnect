@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { Camera, ImagePlus } from 'lucide-react';
+import { preparePhoto } from '../photo';
 import type { ProductDraft } from '../types';
 
 interface Props {
@@ -16,6 +18,22 @@ export function ProductForm({ busy, onSave, onCancel }: Props) {
     imageUrl: '',
     stock: 0,
   });
+  const gallery = useRef<HTMLInputElement>(null);
+  const camera = useRef<HTMLInputElement>(null);
+  const [processing, setProcessing] = useState(false);
+  const [photoError, setPhotoError] = useState('');
+  async function choosePhoto(file?: File) {
+    if (!file || processing) return;
+    setProcessing(true);
+    setPhotoError('');
+    try {
+      update('imageUrl', await preparePhoto(file));
+    } catch (error) {
+      setPhotoError(error instanceof Error ? error.message : 'Unable to open the photo.');
+    } finally {
+      setProcessing(false);
+    }
+  }
   function update(field: keyof ProductDraft, value: string | number) {
     setDraft((current) => ({ ...current, [field]: value }));
   }
@@ -24,7 +42,7 @@ export function ProductForm({ busy, onSave, onCancel }: Props) {
       className="panel product-form"
       onSubmit={(event) => {
         event.preventDefault();
-        void onSave(draft);
+        if (!processing && !busy) void onSave(draft);
       }}
     >
       <h2>New product</h2>
@@ -66,15 +84,20 @@ export function ProductForm({ busy, onSave, onCancel }: Props) {
           />
         </div>
       </div>
-      <label htmlFor="product-image">Image URL (optional)</label>
-      <input
-        id="product-image"
-        type="url"
-        maxLength={2000}
-        placeholder="https://…"
-        value={draft.imageUrl}
-        onChange={(event) => update('imageUrl', event.target.value)}
-      />
+      <label>Product photo (optional)</label>
+      <div className="photo-picker">
+        {draft.imageUrl && <img className="photo-preview" src={draft.imageUrl} alt="Product photo preview" />}
+        <div className="photo-actions">
+          <button type="button" disabled={busy || processing} onClick={() => camera.current?.click()}><Camera /> Take photo</button>
+          <button type="button" disabled={busy || processing} onClick={() => gallery.current?.click()}><ImagePlus /> Choose photo</button>
+        </div>
+        <input ref={camera} type="file" accept="image/*" capture="environment" hidden aria-label="Take product photo" onChange={event => { void choosePhoto(event.target.files?.[0]); event.target.value = ''; }} />
+        <input ref={gallery} type="file" accept="image/*" hidden aria-label="Choose product photo" onChange={event => { void choosePhoto(event.target.files?.[0]); event.target.value = ''; }} />
+        {processing && <p role="status">Preparing photo…</p>}
+        {photoError && <p role="alert" className="error-message">{photoError}</p>}
+        {draft.imageUrl && <button type="button" disabled={busy || processing} onClick={() => { update('imageUrl', ''); setPhotoError(''); }}>Remove photo</button>}
+        <small>Photos are resized automatically. You can also add a product without a photo.</small>
+      </div>
       <label htmlFor="product-stock">Starting stock</label>
       <input
         id="product-stock"
@@ -90,7 +113,7 @@ export function ProductForm({ busy, onSave, onCancel }: Props) {
         <button type="button" onClick={onCancel} disabled={busy}>
           Cancel
         </button>
-        <button className="primary" disabled={busy || !draft.name.trim()}>
+        <button className="primary" disabled={busy || processing || !draft.name.trim()}>
           {busy ? 'Saving…' : 'Add product'}
         </button>
       </div>

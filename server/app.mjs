@@ -98,6 +98,9 @@ export function createApp(store, { adminPin = '1234', staticDir = resolve('dist'
   app.post('/api/admin/products', async (req, res) =>
     res.status(201).json(await store.addProduct(req.body ?? {})),
   );
+  app.patch('/api/admin/products/:id/photo', async (req, res) =>
+    res.json(await store.updatePhoto(Number(req.params.id), req.body ?? {})),
+  );
   app.patch('/api/admin/products/:id/stock', async (req, res) =>
     res.json(await store.updateStock(Number(req.params.id), req.body ?? {})),
   );

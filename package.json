@@ -1,10 +1,10 @@
 {
-  "name": "the-honesty-box",
+  "name": "honestybox",
   "version": "1.0.0",
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=24.0.0"
+    "node": "24.x"
   },
   "scripts": {
     "dev": "node --env-file-if-exists=.env scripts/dev.mjs",

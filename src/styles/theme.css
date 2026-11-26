@@ -672,3 +672,31 @@ small.backorder-note {
 .photo-actions button { display: inline-flex; align-items: center; gap: .5rem; }
 .photo-actions svg { width: 1.15rem; height: 1.15rem; }
 .photo-preview { width: min(100%, 240px); max-height: 220px; object-fit: contain; border-radius: .75rem; }
+
+/* Responsive QR landing page. Keep the form comfortably readable at every size. */
+.welcome-page { min-height: 100svh; }
+.welcome-content { width: min(100% - 40px, 520px); padding: clamp(24px, 5vh, 64px) 0; }
+.welcome-brand { text-align: center; }
+.welcome-tagline { font-size: 15px; margin: 20px 0 0; }
+.welcome-checkin { margin-top: 30px; padding: clamp(20px, 4vw, 40px); border: 1px solid var(--border); border-radius: 24px; background: var(--card); }
+.welcome-checkin h2 { font-size: clamp(26px, 4vw, 38px); margin: 0 0 10px; }
+.welcome-checkin > p { margin: 0; font-size: 16px; }
+.welcome-checkin .botanical-divider { margin: 24px 0; }
+.welcome-checkin label { font-size: 16px; text-align: left; }
+.welcome-checkin input { min-height: 54px; font-size: 18px; }
+.welcome-checkin .primary { min-height: 54px; font-size: 17px; }
+.welcome-checkin .footnote { margin-top: 24px; font-size: 13px; }
+.welcome-footer .text-button { min-height: 44px; padding: 10px 12px; }
+@media (min-width: 800px) {
+  .welcome-content { width: min(100% - 64px, 1280px); flex: 1; display: grid; grid-template-columns: 1.1fr 1fr; gap: clamp(32px, 6vw, 100px); align-items: center; }
+  .welcome-brand { display: flex; flex-direction: column; justify-content: center; min-height: min(72vh, 720px); padding: 48px; border-radius: 32px; background: var(--forest); color: var(--paper); }
+  .welcome-brand .brand-mark { width: 120px; height: 120px; background: rgb(255 255 255 / 12%); }
+  .welcome-brand .brand-mark > svg { width: 56px; height: 56px; }
+  .welcome-brand .brand-intro h1 { font-size: clamp(42px, 4.5vw, 72px); }
+  .welcome-brand p { color: var(--sand); font-size: 18px; }
+  .welcome-checkin { margin-top: 0; padding: clamp(32px, 4vw, 64px); }
+}
+@media (max-width: 799px) {
+  .welcome-content .brand-intro h1 { font-size: clamp(32px, 8vw, 48px); margin-top: 18px; }
+  .welcome-content .brand-mark { width: 76px; height: 76px; }
+}

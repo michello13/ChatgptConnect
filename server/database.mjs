@@ -1,3 +1,4 @@
+import { validPhoto, catalogPhoto, catalogColumns } from './photos.mjs';
 import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
@@ -55,7 +56,7 @@ export function openStore(filename) {
       throw error;
     }
   }
-  const products = () => db.prepare('SELECT * FROM products ORDER BY id').all();
+  const products = () => db.prepare('SELECT '+catalogColumns+' FROM products ORDER BY id').all();
   const orders = () =>
     db
       .prepare('SELECT * FROM orders ORDER BY id DESC')
@@ -70,14 +71,15 @@ export function openStore(filename) {
   return {
     close: () => db.close(),
     products,
+    photo(id) { return db.prepare('SELECT imageUrl FROM products WHERE id=?').get(id)?.imageUrl; },
     orders,
     addProduct(draft) {
       const name = text(draft.name, 'Name');
       const description = text(draft.description ?? '', 'Description', 2000, true);
       const category = text(draft.category || 'Other', 'Category', 80);
       const unit = text(draft.unit || 'item', 'Unit', 80);
-      const imageUrl = text(draft.imageUrl ?? '', 'Image URL', 2000, true);
-      if (imageUrl) {
+      const imageUrl = text(draft.imageUrl ?? '', 'Image', 96000, true);
+      if (imageUrl && !validPhoto(imageUrl)) {
         let url;
         try {
           url = new URL(imageUrl);
@@ -93,7 +95,7 @@ export function openStore(filename) {
           'INSERT INTO products(name,description,stock,category,imageUrl,unit) VALUES(?,?,?,?,?,?)',
         )
         .run(name, description, stock, category, imageUrl, unit);
-      return db.prepare('SELECT * FROM products WHERE id=?').get(result.lastInsertRowid);
+      return catalogPhoto(db.prepare('SELECT * FROM products WHERE id=?').get(result.lastInsertRowid));
     },
     updateStock(id, input) {
       integer(id, 'Product ID', 1);

@@ -1,4 +1,4 @@
-# The Honesty Box
+# HonestyBox
 
 A small React and SQLite application based on the original Figma Make export.
 Customers check in with a name, browse goods, fill a basket and confirm what they
@@ -143,3 +143,7 @@ Export SHA-256:
 ```text
 c4d423ad6101ed21d2007f14fd3e1e1c07452d7676368c61d44813209d41b9d2
 ```
+
+## Vercel migration (draft)
+
+Import this repository as `honestybox`, select Vite and Node 24.x. Create separate Turso databases for preview and production and apply `server/schema.sql` to each using the Turso SQL shell before deployment. Configure `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` and a strong `ADMIN_PIN` (minimum 16 characters) in Vercel environment settings. Do not commit credentials. Remote databases start empty; create products in the admin panel. Local SQLite data is not automatically transferred. Test API routing, checkout concurrency, session persistence, stock updates and login throttling on a protected preview before publishing. The remote adapter and routing are not yet integration-tested. Public checkout remains intentionally unauthenticated; restrict preview access and decide customer access policy before public launch.

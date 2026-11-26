@@ -97,6 +97,14 @@ export function openStore(filename) {
         .run(name, description, stock, category, imageUrl, unit);
       return catalogPhoto(db.prepare('SELECT * FROM products WHERE id=?').get(result.lastInsertRowid));
     },
+    updatePhoto(id, input) {
+      integer(id, 'Product ID', 1);
+      const photo = input.imageUrl;
+      if (photo !== '' && !validPhoto(photo)) throw new AppError(400, 'Choose a valid JPEG photo.');
+      const result = db.prepare('UPDATE products SET imageUrl=? WHERE id=?').run(photo, id);
+      if (!result.changes) throw new AppError(404, 'Product not found.');
+      return products();
+    },
     updateStock(id, input) {
       integer(id, 'Product ID', 1);
       if (!db.prepare('SELECT id FROM products WHERE id=?').get(id))

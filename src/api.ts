@@ -1,4 +1,4 @@
-import type { BasketItem, Order, Product, ProductDraft } from './types';
+import type { BasketItem, Order, Product, ProductDraft, VisitReceipt, Wish } from './types';
 
 export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(`/api${path}`, {
@@ -8,7 +8,7 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
       ...options.headers,
     },
   });
-  const body = await response.json();
+  const body = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(body.error || 'Request failed. Please try again.');
   return body as T;
 }
@@ -16,6 +16,12 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
 // Keep HTTP details here. Components work with products and orders.
 export const shopApi = {
   products: () => api<Product[]>('/products'),
+  announcement: () => api<{message:string}>('/announcement'),
+  sendWishes: (customerName: string, items: BasketItem[], note: string) =>
+    api<VisitReceipt>('/wishes', {method:'POST', body:JSON.stringify({customerName,items,note})}),
+  wishes: () => api<Wish[]>('/admin/wishes'),
+  archiveWish: (id: string) => api<Wish[]>(`/admin/wishes/${encodeURIComponent(id)}/archive`, {method:'PATCH', body:'{}'}),
+  setAnnouncement: (message: string) => api<{message:string}>('/admin/announcement', {method:'PATCH', body:JSON.stringify({message})}),
   placeOrder: (customerName: string, items: BasketItem[]) =>
     api<{ order: Order; products: Product[] }>('/orders', {
       method: 'POST',

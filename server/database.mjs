@@ -1,3 +1,4 @@
+import { wishSchema, importLegacyWishes, listWishes, archiveWishSql, messageSql, saveMessageSql, insertWishes, prepareWishes, wishReceipt } from './wishes.mjs';
 import { validPhoto, catalogPhoto, catalogColumns } from './photos.mjs';
 import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync } from 'node:fs';
@@ -56,6 +57,7 @@ export function openStore(filename) {
       throw error;
     }
   }
+  for (const sql of wishSchema) db.exec(sql);
   const products = () => db.prepare('SELECT '+catalogColumns+' FROM products ORDER BY id').all();
   const orders = () =>
     db
@@ -73,6 +75,26 @@ export function openStore(filename) {
     products,
     photo(id) { return db.prepare('SELECT imageUrl FROM products WHERE id=?').get(id)?.imageUrl; },
     orders,
+    sendWishes(input) {
+      const prepared=prepareWishes(input,{AppError,integer,text});
+      return wishReceipt(prepared,db.prepare(insertWishes).all(...prepared.args),AppError);
+    },
+    wishes() {
+      db.exec(importLegacyWishes);
+      return db.prepare(listWishes).all();
+    },
+    archiveWish(id) {
+      text(id,'Wish ID',100);
+      db.exec(importLegacyWishes);
+      if(!db.prepare(archiveWishSql).run(new Date().toISOString(),id).changes) throw new AppError(404,'Wish not found.');
+      return this.wishes();
+    },
+    announcement() { return db.prepare(messageSql).get()?.value ?? ''; },
+    setAnnouncement(value) {
+      const message=text(value,'Message',500,true);
+      db.prepare(saveMessageSql).run(message);
+      return message;
+    },
     addProduct(draft) {
       const name = text(draft.name, 'Name');
       const description = text(draft.description ?? '', 'Description', 2000, true);

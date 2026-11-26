@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ArrowLeft, Lock, Plus, Settings } from 'lucide-react';
 import { shopApi } from '../api';
 import type { Order, Product, ProductDraft } from '../types';
+import { WishlistPanel } from './WishlistPanel';
 import { ProductForm } from './ProductForm';
 import { PhotoEditor } from './PhotoEditor';
 import { ProductImage } from './ProductImage';
@@ -16,7 +17,7 @@ interface Props {
 export function Admin({ products, onProductsChange, onExit }: Props) {
   const [signedIn, setSignedIn] = useState(false);
   const [pin, setPin] = useState('');
-  const [tab, setTab] = useState<'inventory' | 'orders'>('inventory');
+  const [tab, setTab] = useState<'inventory' | 'orders' | 'wishes'>('wishes');
   const [orders, setOrders] = useState<Order[]>([]);
   const [addingProduct, setAddingProduct] = useState(false);
   const [editingPhoto, setEditingPhoto] = useState<Product | null>(null);
@@ -59,16 +60,13 @@ export function Admin({ products, onProductsChange, onExit }: Props) {
     });
   }
 
-  const backorderCount = orders
-    .flatMap((order) => order.items)
-    .filter((item) => item.isBackorder)
-    .reduce((sum, item) => sum + item.quantity, 0);
+  const takenCount=orders.flatMap(order=>order.items).filter(item=>!item.isBackorder).reduce((sum,item)=>sum+item.quantity,0);
 
   return (
     <main className="page-content admin-page">
       <div className="section-heading">
         <h1>
-          <Settings /> Admin Panel
+          <Settings /> Box management
         </h1>
         <button
           className="text-button"
@@ -102,8 +100,8 @@ export function Admin({ products, onProductsChange, onExit }: Props) {
         >
           <Lock />
           <h2>Admin Access</h2>
-          <p>Enter your PIN to continue.</p>
-          <label htmlFor="admin-pin">Admin PIN</label>
+          <p>Enter your administrator password to continue.</p>
+          <label htmlFor="admin-pin">Admin password</label>
           <input
             id="admin-pin"
             type="password"
@@ -122,19 +120,20 @@ export function Admin({ products, onProductsChange, onExit }: Props) {
         <>
           <div className="stats-grid">
             <div className="panel">
-              <strong>{orders.length}</strong>
-              <span>Orders</span>
+              <strong>{orders.filter(o=>o.items.some(i=>!i.isBackorder)).length}</strong>
+              <span>Recorded visits</span>
             </div>
             <div className="panel">
               <strong>{products.filter((product) => product.stock <= 5).length}</strong>
               <span>Low stock</span>
             </div>
             <div className="panel">
-              <strong>{backorderCount}</strong>
-              <span>Requested</span>
+              <strong>{takenCount}</strong>
+              <span>Items taken</span>
             </div>
           </div>
           <nav className="admin-tabs" aria-label="Admin sections">
+            <button aria-pressed={tab==='wishes'} onClick={()=>setTab('wishes')}>Wishlist</button>
             <button aria-pressed={tab === 'inventory'} onClick={() => setTab('inventory')}>
               Inventory
             </button>
@@ -145,10 +144,10 @@ export function Admin({ products, onProductsChange, onExit }: Props) {
                 void perform(async () => setOrders(await shopApi.orders()));
               }}
             >
-              Orders
+              History
             </button>
           </nav>
-          {tab === 'inventory' ? (
+          {tab === 'wishes' ? <WishlistPanel/> : tab === 'inventory' ? (
             <>
               {editingPhoto ? (
                 <PhotoEditor key={editingPhoto.id} product={editingPhoto} busy={busy}
@@ -198,8 +197,8 @@ export function Admin({ products, onProductsChange, onExit }: Props) {
               </div>
             </>
           ) : (
-            <section className="orders-list" aria-label="Customer orders">
-              {!orders.length && <p className="empty-state">No orders yet.</p>}
+            <section className="orders-list" aria-label="Visit history">
+              {!orders.length && <p className="empty-state">No visits recorded yet.</p>}
               {orders.map((order) => (
                 <article className="panel" key={order.id}>
                   <h2>
@@ -214,7 +213,7 @@ export function Admin({ products, onProductsChange, onExit }: Props) {
                         <span>
                           {item.name}
                           {item.isBackorder && (
-                            <small className="backorder-note"> · Back-order request</small>
+                            <small className="backorder-note"> · Wish</small>
                           )}
                         </span>
                         <span>×{item.quantity}</span>

@@ -147,3 +147,40 @@ test('SQLite data survives reopening the database', () => {
     rmSync(folder, { recursive: true });
   }
 });
+
+test('wishes are independent of stock, private, archived without deleting history', async t=>{
+  const {store,request,login}=await fixture(t);
+  const before=store.products().map(p=>p.stock);
+  const response=await request('/wishes','POST',{customerName:'Robin',items:[take(1,2),take(3,3)],note:'Love the cruesli'});
+  assert.equal(response.status,201);
+  assert.deepEqual(store.products().map(p=>p.stock),before);
+  assert.equal(store.orders().length,0);
+  assert.equal((await request('/admin/wishes')).status,401);
+  const cookie=await login();
+  let wishes=await (await request('/admin/wishes','GET',undefined,cookie)).json();
+  assert.equal(wishes.length,2);
+  assert.equal(wishes[0].note,'Love the cruesli');
+  assert.equal((await request('/admin/wishes/'+wishes[0].id+'/archive','PATCH',{})).status,401);
+  const archived=await request('/admin/wishes/'+wishes[0].id+'/archive','PATCH',{},cookie);
+  assert.equal(archived.status,200);
+  wishes=await archived.json();
+  assert.equal(wishes.filter(w=>w.archivedAt).length,1);
+  assert.equal(wishes.length,2);
+  assert.equal((await request('/wishes','POST',{customerName:'Robin',items:[take(1),take(999999)]})).status,409);
+  assert.equal(store.wishes().length,2);
+  assert.equal((await request('/wishes','POST',{customerName:'Robin',items:[take(1),take(1)]})).status,400);
+  assert.equal((await request('/admin/announcement','PATCH',{message:'Fresh eggs!'})).status,401);
+  assert.equal((await request('/admin/announcement','PATCH',{message:'Fresh eggs!'},cookie)).status,200);
+  assert.equal((await (await request('/announcement')).json()).message,'Fresh eggs!');
+});
+test('legacy backorders are included once in wishlist history', async t=>{
+  const {store,request,login}=await fixture(t);
+  assert.equal((await request('/orders','POST',{customerName:'Alex',items:[take(3,2,true)]})).status,201);
+  const cookie=await login();
+  for(let i=0;i<2;i++){
+    const wishes=await (await request('/admin/wishes','GET',undefined,cookie)).json();
+    assert.equal(wishes.length,1);
+    assert.equal(wishes[0].quantity,2);
+  }
+  assert.equal(store.orders().length,1);
+});

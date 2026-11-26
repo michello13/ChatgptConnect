@@ -11,3 +11,6 @@ CREATE TRIGGER IF NOT EXISTS checkout_atomic AFTER INSERT ON checkout_requests B
  INSERT INTO order_items SELECT NEW.id,p.id,p.name,json_extract(j.value,'$.quantity'),json_extract(j.value,'$.isBackorder') FROM json_each(NEW.items) j JOIN products p ON p.id=json_extract(j.value,'$.productId');
  UPDATE products SET stock=stock-(SELECT quantity FROM order_items WHERE orderId=NEW.id AND productId=products.id AND isBackorder=0) WHERE id IN (SELECT productId FROM order_items WHERE orderId=NEW.id AND isBackorder=0);
 END;
+
+CREATE TABLE IF NOT EXISTS wishes (id TEXT PRIMARY KEY, productId INTEGER NOT NULL REFERENCES products(id), name TEXT NOT NULL, quantity INTEGER NOT NULL CHECK(quantity BETWEEN 1 AND 999), customerName TEXT NOT NULL, createdAt TEXT NOT NULL, note TEXT NOT NULL DEFAULT '', archivedAt TEXT);
+CREATE TABLE IF NOT EXISTS box_settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);

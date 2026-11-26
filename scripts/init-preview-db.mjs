@@ -34,7 +34,7 @@ async function main() {
     catch (error) { throw new Error(label + ': ' + error.message); }
     console.log('OK: ' + label);
   }
-  const expected = ['products','orders','order_items','admin_sessions','login_attempts','checkout_requests','checkout_atomic'];
+  const expected = ['products','orders','order_items','admin_sessions','login_attempts','checkout_requests','checkout_atomic','wishes','box_settings'];
   const result = await execute("SELECT name FROM sqlite_schema WHERE type IN ('table','trigger')");
   const names = new Set(result.rows.map(row => row[0].value));
   for (const name of expected) if (!names.has(name)) throw new Error('Missing schema object: ' + name);

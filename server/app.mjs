@@ -47,6 +47,8 @@ export function createApp(store, { adminPin = '1234', staticDir = resolve('dist'
     res.set('X-Content-Type-Options', 'nosniff');
     res.type('image/jpeg').send(Buffer.from(photo.slice('data:image/jpeg;base64,'.length), 'base64'));
   });
+  app.get('/api/announcement', async (_req,res) => res.json({message:await store.announcement()}));
+  app.post('/api/wishes', async (req,res) => res.status(201).json(await store.sendWishes(req.body ?? {})));
   app.post('/api/orders', async (req, res) => res.status(201).json(await store.placeOrder(req.body ?? {})));
   app.post('/api/admin/login', async (req, res) => {
     const now = Date.now();
@@ -94,6 +96,9 @@ export function createApp(store, { adminPin = '1234', staticDir = resolve('dist'
     res.clearCookie('honesty_session', { path: '/api/admin' });
     res.json({ ok: true });
   });
+  app.get('/api/admin/wishes', async (_req,res) => res.json(await store.wishes()));
+  app.patch('/api/admin/wishes/:id/archive', async (req,res) => res.json(await store.archiveWish(req.params.id)));
+  app.patch('/api/admin/announcement', async (req,res) => res.json({message:await store.setAnnouncement(req.body?.message)}));
   app.get('/api/admin/orders', async (_req, res) => res.json(await store.orders()));
   app.post('/api/admin/products', async (req, res) =>
     res.status(201).json(await store.addProduct(req.body ?? {})),

@@ -1,3 +1,4 @@
+import { wishSchema, importLegacyWishes, listWishes, archiveWishSql, messageSql, saveMessageSql, insertWishes, prepareWishes, wishReceipt } from './wishes.mjs';
 import { validPhoto, catalogPhoto, catalogColumns } from './photos.mjs';
 // Turso HTTP pipeline API. Each checkout uses one SQLite transaction on the remote server.
 import { AppError, integer, text } from './database.mjs';
@@ -20,9 +21,42 @@ export function openRemoteStore() {
     });
   }
   const query=async(sql,args=[]) => (await execute([[sql,args]]))[0];
+  let ready;
+  function ensureWishes() {
+    if(!ready) ready=(async()=>{for(const sql of wishSchema) await query(sql);})().catch(error=>{ready=undefined;throw error;});
+    return ready;
+  }
+  async function wishes(){
+    await ensureWishes();
+    await query(importLegacyWishes);
+    return (await query(listWishes)).rows;
+  }
   const products=async()=> (await query('SELECT '+catalogColumns+' FROM products ORDER BY id')).rows;
   return {
     products,
+    async sendWishes(input){
+      const prepared=prepareWishes(input,{AppError,integer,text});
+      await ensureWishes();
+      return wishReceipt(prepared,(await query(insertWishes,prepared.args)).rows,AppError);
+    },
+    wishes,
+    async archiveWish(id){
+      text(id,'Wish ID',100);
+      await ensureWishes();
+      await query(importLegacyWishes);
+      if(!(await query(archiveWishSql,[new Date().toISOString(),id])).changes) throw new AppError(404,'Wish not found.');
+      return wishes();
+    },
+    async announcement(){
+      await ensureWishes();
+      return (await query(messageSql)).rows[0]?.value ?? '';
+    },
+    async setAnnouncement(value){
+      const message=text(value,'Message',500,true);
+      await ensureWishes();
+      await query(saveMessageSql,[message]);
+      return message;
+    },
     async photo(id){return (await query('SELECT imageUrl FROM products WHERE id=?',[id])).rows[0]?.imageUrl;},
     async orders(){
       const rows=(await query('SELECT o.id,o.customerName,o.createdAt,i.productId,i.name,i.quantity,i.isBackorder FROM orders o JOIN order_items i ON i.orderId=o.id ORDER BY o.id DESC')).rows;

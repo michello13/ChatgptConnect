@@ -15,9 +15,9 @@ export function Brand({ large = false }: { large?: boolean }) {
       </div>
       <h1>The Honesty Box</h1>
       <p>
-        Small-batch, foraged &amp; artisan goods.
+        Homemade, homegrown &amp; shared with love.
         <br />
-        Take what you need, pay with trust.
+        A little something from our home to yours.
       </p>
     </div>
   );

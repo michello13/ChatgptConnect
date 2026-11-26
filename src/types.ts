@@ -22,3 +22,16 @@ export interface Order {
   createdAt: string;
   items: (BasketItem & { name: string })[];
 }
+
+export type VisitMode = 'today' | 'wishes';
+export type VisitReceipt = Pick<Order, 'customerName' | 'createdAt' | 'items'>;
+export interface Wish {
+  id: string;
+  productId: number;
+  name: string;
+  quantity: number;
+  customerName: string;
+  createdAt: string;
+  note: string;
+  archivedAt: string | null;
+}

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { shopApi } from '../api';
-import type { BasketItem, Order, Product } from '../types';
+import type { BasketItem, VisitReceipt, VisitMode, Product } from '../types';
 import { Admin } from '../components/Admin';
 import { Basket } from '../components/Basket';
 import { Catalog } from '../components/Catalog';
@@ -10,11 +10,14 @@ import { Confirmation } from '../components/Confirmation';
 type Screen = 'checkin' | 'catalog' | 'basket' | 'confirmation' | 'admin';
 
 export default function App() {
+  const [mode,setMode]=useState<VisitMode>('today');
+  const [note,setNote]=useState('');
+  const [announcement,setAnnouncement]=useState('');
   const [screen, setScreen] = useState<Screen>('checkin');
   const [customerName, setCustomerName] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
   const [basket, setBasket] = useState<BasketItem[]>([]);
-  const [lastOrder, setLastOrder] = useState<Order | null>(null);
+  const [lastOrder, setLastOrder] = useState<VisitReceipt | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -26,16 +29,17 @@ export default function App() {
     try {
       setProducts(await shopApi.products());
     } catch {
-      setError('Cannot load products. Check that the server is running, then try again.');
+      setError('The box couldn't be loaded. Please try again.');
     } finally {
       setLoading(false);
     }
   }
   useEffect(() => {
     void loadProducts();
+    void shopApi.announcement().then(r=>setAnnouncement(r.message)).catch(()=>{});
   }, []);
 
-  function changeQuantity(product: Product, quantity: number, isBackorder = product.stock === 0) {
+  function changeQuantity(product: Product, quantity: number, isBackorder: boolean) {
     if (orderInFlight.current) return;
     const maximum = isBackorder ? 999 : product.stock;
     const boundedQuantity = Math.max(0, Math.min(quantity, maximum));
@@ -50,19 +54,25 @@ export default function App() {
   }
 
   async function confirmOrder() {
-    if (orderInFlight.current || basket.length === 0) return;
+    const selected=basket.filter(i=>i.isBackorder===(mode==='wishes'));
+    if (orderInFlight.current || selected.length === 0) return;
     orderInFlight.current = true;
     setSubmitting(true);
     setError('');
     try {
-      const result = await shopApi.placeOrder(customerName, basket);
-      setProducts(result.products);
-      setLastOrder(result.order);
-      setBasket([]);
+      if(mode==='wishes'){
+        setLastOrder(await shopApi.sendWishes(customerName,selected,note));
+        setNote('');
+      } else {
+        const result=await shopApi.placeOrder(customerName,selected);
+        setProducts(result.products);
+        setLastOrder(result.order);
+      }
+      setBasket(current=>current.filter(i=>i.isBackorder!==(mode==='wishes')));
       setScreen('confirmation');
     } catch (error) {
       setError(
-        error instanceof Error ? error.message : 'Could not save your order. Please try again.',
+        error instanceof Error ? error.message : 'Could not save your selection. Please try again.',
       );
       // Keep the basket so the customer can correct stock conflicts without starting again.
       try {
@@ -77,6 +87,8 @@ export default function App() {
   }
 
   function returnToCheckIn() {
+    if(basket.length && !window.confirm('Leave without saving your remaining selection?')) return;
+    setNote('');
     setCustomerName('');
     setBasket([]);
     setError('');
@@ -108,7 +120,9 @@ export default function App() {
         <>
           {screen === 'checkin' && (
             <CheckIn
-              onCheckIn={(name) => {
+              announcement={announcement}
+              onCheckIn={(name, nextMode) => {
+                setMode(nextMode);
                 setCustomerName(name);
                 setScreen('catalog');
                 void loadProducts();
@@ -121,6 +135,8 @@ export default function App() {
               products={products}
               basket={basket}
               customerName={customerName}
+              mode={mode}
+              onModeChange={setMode}
               onQuantityChange={changeQuantity}
               onViewBasket={() => setScreen('basket')}
               onLeave={returnToCheckIn}
@@ -129,7 +145,10 @@ export default function App() {
           {screen === 'basket' && (
             <Basket
               products={products}
-              items={basket}
+              items={basket.filter(i=>i.isBackorder===(mode==='wishes'))}
+              mode={mode}
+              note={note}
+              onNoteChange={setNote}
               customerName={customerName}
               busy={submitting}
               onQuantityChange={changeQuantity}
@@ -140,10 +159,10 @@ export default function App() {
             />
           )}
           {screen === 'confirmation' && lastOrder && (
-            <Confirmation order={lastOrder} onDone={returnToCheckIn} />
+            <Confirmation order={lastOrder} mode={mode} pendingOther={basket.length>0} onContinue={()=>{setMode(mode==='today'?'wishes':'today');setScreen('catalog');}} onDone={returnToCheckIn} />
           )}
           {screen === 'admin' && (
-            <Admin products={products} onProductsChange={setProducts} onExit={returnToCheckIn} />
+            <Admin products={products} onProductsChange={setProducts} onExit={()=>{returnToCheckIn();void shopApi.announcement().then(r=>setAnnouncement(r.message)).catch(()=>{});}} />
           )}
         </>
       )}

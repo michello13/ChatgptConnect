@@ -29,7 +29,7 @@ export default function App() {
     try {
       setProducts(await shopApi.products());
     } catch {
-      setError('The box couldn't be loaded. Please try again.');
+      setError("The box couldn't be loaded. Please try again.");
     } finally {
       setLoading(false);
     }

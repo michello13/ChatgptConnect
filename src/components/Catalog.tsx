@@ -20,7 +20,7 @@ export function Catalog({products,basket,customerName,mode,onModeChange,onQuanti
   const wishing=mode==='wishes';
   const pool=products.filter(p=>wishing || p.stock>0);
   const categories=['All',...new Set(pool.map(p=>p.category))].filter((v,i,a)=>a.indexOf(v)===i);
-  const visible=pool.filter(p=>category==='All'||p.category===category);
+  const visible=pool.filter(p=>category==='All'||!categories.includes(category)||p.category===category);
   const count=(wish:boolean)=>basket.filter(i=>i.isBackorder===wish).reduce((sum,i)=>sum+i.quantity,0);
   const activeCount=count(wishing);
   function switchMode(next:VisitMode){setCategory('All');onModeChange(next);}

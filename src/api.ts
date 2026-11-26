@@ -8,7 +8,7 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
       ...options.headers,
     },
   });
-  const body = await response.json().catch(() => ({}));
+  const body = await response.json().catch(() => { throw new Error('The box is temporarily unavailable. Please try again.'); });
   if (!response.ok) throw new Error(body.error || 'Request failed. Please try again.');
   return body as T;
 }

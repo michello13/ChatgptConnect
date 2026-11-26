@@ -10,11 +10,12 @@ export function WishlistPanel() {
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
   const [feedback,setFeedback]=useState('');
+  const [loaded,setLoaded]=useState(false);
   async function run(action:()=>Promise<void>){
     setBusy(true);setError('');setFeedback('');
     try{await action();}catch(e){setError(e instanceof Error?e.message:'Could not save. Try again.');}finally{setBusy(false);}
   }
-  function load(){void run(async()=>{const [w,m]=await Promise.all([shopApi.wishes(),shopApi.announcement()]);setWishes(w);setMessage(m.message);});}
+  function load(){void run(async()=>{const [w,m]=await Promise.all([shopApi.wishes(),shopApi.announcement()]);setWishes(w);setMessage(m.message);setLoaded(true);});}
   useEffect(()=>{load();},[]);
   const cutoff=Date.now()-7*24*60*60*1000;
   const visible=wishes.filter(w=>filter==='archive'?!!w.archivedAt:!w.archivedAt&&(filter==='all'||Date.parse(w.createdAt)>=cutoff));
@@ -28,7 +29,7 @@ export function WishlistPanel() {
     {feedback&&<p role="status">{feedback}</p>}
     <nav className="admin-tabs wish-filters" aria-label="Wishlist history">
       <button aria-pressed={filter==='week'} onClick={()=>setFilter('week')}>Last 7 days</button>
-      <button aria-pressed={filter==='all'} onClick={()=>setFilter('all')}>All recent</button>
+      <button aria-pressed={filter==='all'} onClick={()=>setFilter('all')}>All unarchived</button>
       <button aria-pressed={filter==='archive'} onClick={()=>setFilter('archive')}>Archived</button>
     </nav>
     <div className="stats-grid wish-stats"><div className="panel"><strong>{visible.length}</strong><span>Wishes</span></div><div className="panel"><strong>{groups.size}</strong><span>Products</span></div><div className="panel"><strong>{visible.reduce((s,w)=>s+w.quantity,0)}</strong><span>Desired units</span></div></div>
@@ -43,7 +44,7 @@ export function WishlistPanel() {
     <form className="panel announcement-form" onSubmit={e=>{e.preventDefault();void run(async()=>{const r=await shopApi.setAnnouncement(message);setMessage(r.message);setFeedback('Your note is saved.');});}}>
       <h2>A little note from home</h2><p>Share a message on the welcome screen. Leave it empty to hide it.</p>
       <label htmlFor="home-message">Message for neighbours</label><textarea id="home-message" rows={3} maxLength={500} value={message} disabled={busy} onChange={e=>setMessage(e.target.value)}/>
-      <button className="primary full-width" disabled={busy}>Save message</button>
+      <button className="primary full-width" disabled={busy||!loaded}>Save message</button>
     </form>
   </section>;
 }

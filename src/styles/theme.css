@@ -749,3 +749,7 @@ small.backorder-note {
 @media(min-width:1000px){.product-grid{grid-template-columns:repeat(4,minmax(0,1fr));}}
 @media(max-width:390px){.product-grid{gap:8px;}.product-details{padding:10px;}.product-details h2{font-size:16px;}.quantity-control{gap:3px;}.journey-tabs{padding-inline:12px;}.journey-tabs button{font-size:14px;padding:8px;}.wishlist-invite{flex-wrap:wrap;}}
 @media(max-width:620px){.admin-tabs{flex-wrap:wrap;}.wish-stats .panel{padding:12px;}.wishlist-admin .section-heading h2{font-size:20px;}}
+
+/* Friendly check-in validation, displayed only after an attempted visit. */
+.welcome-checkin input[aria-invalid="true"] { border-color: var(--terracotta); margin-bottom: 4px; }
+.welcome-checkin .name-validation { color: #983b24; font-size: 14px; line-height: 1.4; margin: 0 0 12px; }

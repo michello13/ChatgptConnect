@@ -29,6 +29,7 @@ test('local product photo replacement preserves stock and supports removal', asy
     const removed=store.updatePhoto(product.id,{imageUrl:''}).find(p=>p.id===product.id);
     assert.equal(removed.imageUrl,'');
     assert.equal(removed.stock,7);
-    assert.throws(()=>store.updatePhoto(9999999,{imageUrl:sample}),/not found/);
+    assert.throws(()=>store.updatePhoto(999999,{imageUrl:sample}),/not found/);
+    assert.throws(()=>store.updatePhoto(9999999,{imageUrl:sample}),/Product ID must be a whole number/);
   } finally { store.close(); }
 });

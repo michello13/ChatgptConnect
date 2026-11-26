@@ -1,3 +1,4 @@
+import { validPhoto } from './photos.mjs';
 import express from 'express';
 import { randomBytes, timingSafeEqual, createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
@@ -34,9 +35,18 @@ export function createApp(store, { adminPin = '1234', staticDir = resolve('dist'
     }
     next();
   });
+  app.use('/api/admin/products', express.json({ limit: '128kb' }));
   app.use(express.json({ limit: '32kb' }));
   app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
   app.get('/api/products', async (_req, res) => res.json(await store.products()));
+  app.get('/api/products/:id/photo', async (req, res) => {
+    const id = Number(req.params.id);
+    if (!Number.isSafeInteger(id) || id < 1) return res.sendStatus(404);
+    const photo = await store.photo(id);
+    if (!validPhoto(photo)) return res.sendStatus(404);
+    res.set('X-Content-Type-Options', 'nosniff');
+    res.type('image/jpeg').send(Buffer.from(photo.slice('data:image/jpeg;base64,'.length), 'base64'));
+  });
   app.post('/api/orders', async (req, res) => res.status(201).json(await store.placeOrder(req.body ?? {})));
   app.post('/api/admin/login', async (req, res) => {
     const now = Date.now();
@@ -101,7 +111,7 @@ export function createApp(store, { adminPin = '1234', staticDir = resolve('dist'
     );
   }
   app.use((error, _req, res, _next) => {
-    const status = error instanceof AppError ? error.status : error.status === 400 ? 400 : 500;
+    const status = error instanceof AppError ? error.status : [400, 413].includes(error.status) ? error.status : 500;
     if (status === 500) console.error(error);
     res
       .status(status)

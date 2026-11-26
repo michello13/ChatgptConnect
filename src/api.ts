@@ -29,6 +29,11 @@ export const shopApi = {
       method: 'POST',
       body: JSON.stringify(product),
     }),
+  setPhoto: (id: number, imageUrl: string) =>
+    api<Product[]>(`/admin/products/${id}/photo`, {
+      method: 'PATCH',
+      body: JSON.stringify({ imageUrl }),
+    }),
   setStock: (id: number, stock: number) =>
     api<Product[]>(`/admin/products/${id}/stock`, {
       method: 'PATCH',

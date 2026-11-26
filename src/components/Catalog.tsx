@@ -35,7 +35,7 @@ export function Catalog({products,basket,customerName,mode,onModeChange,onQuanti
     </header>
     <main className="page-content catalog-content">
       <h1>{wishing?"What would you love to see again?":"Inside the box"}</h1>
-      <p className="catalog-intro">Hi, {customerName}! {wishing?"Tell me what you'd enjoy in a future batch. Wishes are not reservations or promises.":"Choose the quantities you're taking today."}</p>
+      <p className="catalog-intro">Hi, {customerName}! {wishing?"Tell me what you'd enjoy in a future batch.":"Choose the quantities you're taking today."}</p>
       <div className="product-grid">
         {visible.map(product=>{
           const quantity=basket.find(i=>i.productId===product.id&&i.isBackorder===wishing)?.quantity??0;
